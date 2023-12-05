@@ -1,0 +1,27 @@
+{
+  "required_api_version": "2.0.0",
+  "name": "Teams Calendar Events",
+  "description": "Calculate the difference between two dates",
+  "developer_name": "John Hill",
+  "developer_email": "j.hill@herts.ac.uk",
+  "icon": "images/calendar-days-solid.svg",
+  "options": {
+    "query_debounce": 0.1
+  },
+  "preferences": [
+    {
+      "id": "date_diff_kw",
+      "type": "keyword",
+      "name": "DateDiff",
+      "description": "Calculate date difference",
+      "default_value": "datediff"
+    },
+    {
+      "id": "api_key",
+      "type": "input",
+      "name": "Teams API Key",
+      "description": "Enter your personal API key from OpenWeatherMap.org",
+      "default_value": " "
+    }
+  ]
+}
