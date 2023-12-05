@@ -5,12 +5,9 @@ from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction
 from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
 import requests
-import subprocess
 import logging
-from datetime import datetime, timedelta
-import gettext
-import os
 from ulauncher.api.shared.action.OpenUrlAction import OpenUrlAction
+from datetime import datetime, timedelta
 logger = logging.getLogger(__name__)
 
 class DaysBetweenDatesExtension(Extension):
@@ -20,6 +17,22 @@ class DaysBetweenDatesExtension(Extension):
         self.subscribe(KeywordQueryEvent, KeywordQueryEventListener())
 
 class KeywordQueryEventListener(EventListener):
+    
+    def formatDate(self, eventDate, utc_offset_minutes):
+        actual_date = datetime.strptime(eventDate[:19], '%Y-%m-%dT%H:%M:%S')
+        offset_timedelta = timedelta(minutes=utc_offset_minutes)
+        actual_date += offset_timedelta
+        today = datetime.utcnow() + offset_timedelta
+        time_difference = actual_date - today
+        if actual_date.day == today.day:
+            if time_difference.days == -1:
+                formatted_time = f'[COMPLETED] {actual_date.strftime("%H:%M")}'
+            else:
+                formatted_time = f'Today at {actual_date.strftime("%H:%M")}'
+        else:
+            formatted_time = actual_date.strftime("%d/%m/%y %H:%M")
+        return formatted_time
+
     def buildQueryString(self, filter_type):
 
         if filter_type == "today":
@@ -32,7 +45,6 @@ class KeywordQueryEventListener(EventListener):
             start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             end_date = start_date + timedelta(weeks=1)
         else:
-            # Default to a custom date range or handle as needed
             start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             end_date = start_date + timedelta(days=7)
 
@@ -44,10 +56,7 @@ class KeywordQueryEventListener(EventListener):
 
     def getCalendarEvents(self, items, filter):
         
-        
-        
         url = "https://teams.microsoft.com/api/mt/part/amer-02/beta/me/calendarEvents"
-        # querystring = {"StartDate":"2023-12-04T14:13:09.307Z","EndDate":"2023-12-07T14:13:09.307Z"}
         headers = {"Authorization": "Bearer " + self.apikey}
         querystring = self.buildQueryString(filter)
         response = requests.get(url, headers=headers, params=querystring)
@@ -61,7 +70,9 @@ class KeywordQueryEventListener(EventListener):
     
             eventName = event["subject"]
             startDate =  event["startTime"]
-            desc = "Starts in: " + startDate
+            utcOffset =  event["utcOffset"]
+            formatted_time = self.formatDate(startDate, utcOffset)
+            desc = formatted_time 
             ev = ExtensionResultItem(name=eventName, description=desc, on_enter=OpenUrlAction(urlEvent))
             items.append(ev)
                 
@@ -85,7 +96,6 @@ class KeywordQueryEventListener(EventListener):
         else: 
             return 0
         
-
         return RenderResultListAction(items)
         
 
